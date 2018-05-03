@@ -3,7 +3,7 @@ import requests
 
 from django.conf import settings
 
-ORION_URL = getattr(settings, ORION_URL, 'http://localhost:1026/')
+ORION_URL = getattr(settings, "ORION_URL", 'http://localhost:1026/')
 
 
 def get_related_field(instance, field):
