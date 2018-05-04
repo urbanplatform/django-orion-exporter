@@ -1,11 +1,16 @@
+
+from __future__ import absolute_import
+
 import json
 import requests
 
 from django.conf import settings
 import logging
-from celery import task
+from celery import Celery
 ORION_URL = getattr(settings, "ORION_URL", 'http://localhost:1026/')
+BROKER_URL = getattr(settings, "BROKER_URL")
 
+app = Celery(broker=BROKER_URL)
 
 def get_related_field(instance, field):
     field_path = field.split('.')
@@ -18,7 +23,7 @@ def get_related_field(instance, field):
     return attr
 
 
-@task
+@app.task
 def send_request(body):
     print("Sending to Orion modified")
     print(json.dumps(body))
