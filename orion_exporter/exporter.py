@@ -2,6 +2,8 @@ import json
 import requests
 
 from django.conf import settings
+import logging
+
 
 ORION_URL = getattr(settings, "ORION_URL", 'http://localhost:1026/')
 
@@ -25,7 +27,7 @@ def send_to_orion(instance):
     }
 
     for key, value in fields['dynamic_attributes'].iteritems():
-        attribute_value = getattr(instance, key)
+        attribute_value = get_related_field(instance, key)
         attribute_name = value['name']
         attribute_type = value['type']
         
@@ -42,7 +44,8 @@ def send_to_orion(instance):
         }
         entity.update(attribute)
     
-    for key, value in fields['static_attributes'].iteritems():
+    static_attributes = fields.get('static_attributes', {})
+    for key, value in static_attributes.iteritems():
         entity.update({key: value})
 
     body = {
@@ -50,7 +53,11 @@ def send_to_orion(instance):
         "entities": [entity]
     }
     
-    orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers={"Content-Type": "application/json"})
     print("Sending to Orion")
     print(json.dumps(body))
-    print(orion_request)
+    
+    try:
+        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers={"Content-Type": "application/json"})
+        print(orion_request)
+    except:
+        logging.exception("Failed to send update to orion for entity {}".format(body))
