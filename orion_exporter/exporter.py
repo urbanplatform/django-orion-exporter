@@ -3,8 +3,7 @@ import requests
 
 from django.conf import settings
 import logging
-
-
+from celery import task
 ORION_URL = getattr(settings, "ORION_URL", 'http://localhost:1026/')
 
 
@@ -17,6 +16,18 @@ def get_related_field(instance, field):
         except AttributeError:
             return None
     return attr
+
+
+@task
+def send_request(body):
+    print("Sending to Orion modified")
+    print(json.dumps(body))
+    try:
+        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers={"Content-Type": "application/json"})
+        print(orion_request)
+    except:
+        logging.exception("Failed to send update to orion for entity {}".format(body))
+
 
 def send_to_orion(instance):
     fields = instance.fiware_datamodel
@@ -56,8 +67,4 @@ def send_to_orion(instance):
     print("Sending to Orion")
     print(json.dumps(body))
     
-    try:
-        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers={"Content-Type": "application/json"})
-        print(orion_request)
-    except:
-        logging.exception("Failed to send update to orion for entity {}".format(body))
+    send_request.delay(body)
