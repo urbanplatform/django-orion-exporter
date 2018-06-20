@@ -1,4 +1,3 @@
-
 from __future__ import absolute_import
 
 import json
@@ -31,6 +30,7 @@ def send_request(body):
         orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers={"Content-Type": "application/json"})
         print(orion_request)
     except:
+        print(orion_request)
         logging.exception("Failed to send update to orion for entity {}".format(body))
 
 
