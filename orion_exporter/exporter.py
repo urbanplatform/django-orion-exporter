@@ -38,9 +38,10 @@ def send_request(body):
 def remove_bad_chars(value):
     bad_chars = ['<','>','"', '\'', '=', ';', '(', ')']
     
-    for bad_char in bad_chars:
-        value.replace(bad_char, '')
-    
+    if isinstance(value, basestring):
+        for bad_char in bad_chars:
+            value.replace(bad_char, '')
+        
     return value
 
 def send_to_orion(instance):
