@@ -25,13 +25,14 @@ def get_related_field(instance, field):
 @app.task
 def send_request(body):
     print("Sending to Orion modified")
+    print("BODY:\n")
     print(json.dumps(body))
-    try:
-        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers={"Content-Type": "application/json"})
-        print(orion_request)
-    except:
-        print(orion_request)
-        logging.exception("Failed to send update to orion for entity {}".format(body))
+    print("\n")
+    # try:
+    orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers={"Content-Type": "application/json"})
+    print(orion_request)
+    # except:
+    logging.exception("Failed to send update to orion for entity {}".format(body))
 
 
 def send_to_orion(instance):
