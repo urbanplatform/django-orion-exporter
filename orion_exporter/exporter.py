@@ -27,13 +27,21 @@ def send_request(body):
     print("Sending to Orion modified")
     print("BODY:\n")
     print(json.dumps(body))
-    print("\n")
-    # try:
-    orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers={"Content-Type": "application/json"})
-    print(orion_request)
-    # except:
-    logging.exception("Failed to send update to orion for entity {}".format(body))
 
+    try:
+        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers={"Content-Type": "application/json"})
+        print(orion_request)
+    except:
+        logging.exception("Failed to send update to orion for entity {}".format(body))
+
+
+def remove_bad_chars(value):
+    bad_chars = ['<','>','"', '\'', '=', ';', '(', ')']
+    
+    for bad_char in bad_chars:
+        value.replace(bad_char, '')
+    
+    return value
 
 def send_to_orion(instance):
     fields = instance.fiware_datamodel
@@ -56,7 +64,7 @@ def send_to_orion(instance):
         attribute = {
             attribute_name: {
                 "type": attribute_type,
-                "value": attribute_value
+                "value": remove_bad_chars(attribute_value)
             }
         }
         entity.update(attribute)
