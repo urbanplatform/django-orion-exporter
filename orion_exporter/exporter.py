@@ -87,6 +87,50 @@ def send_to_orion(instance):
     for key, value in static_attributes.iteritems():
         entity.update({key: value})
 
+    '''
+    {
+        "related_querysets": {
+            "source_times": {
+                "name": "sourceTimes",
+                "fields": [
+                    "start_date": {
+                        "type": "DateTime",
+                        "name": "startDate"
+                    },
+                    "end_date": {
+                        "type": "DateTime",
+                        "name": "endDate"
+                    }
+                ]
+            }
+        }
+    }
+    '''
+
+    related_querysets = fields.get('related_querysets', {})
+    for field, attributes in static_attributes.iteritems():
+        attribute_name = attributes['name']
+        fields = attributes['field']
+
+        queryset = getattr(instance, field).all().values(*attributes)
+        for key, value in fields.iteritems():
+            attribute_type = value['type']
+            attribute_name = value['name']
+
+            if attribute_type == 'DateTime':
+                value = value.isoformat().replace('+00:00', 'Z')
+            elif attribute_type == 'geo:json':
+                value = json.loads(attribute_value.json)
+
+            attribute = {
+                attribute_name: {
+                    "type": attribute_type,
+                    "value": remove_bad_chars(attribute_value)
+                }
+            }
+
+            entity.update(attribute)
+
     body = {
         "actionType": "APPEND",
         "entities": [entity]
