@@ -53,6 +53,9 @@ def send_to_orion(instance):
     }
 
     for key, value in fields['dynamic_attributes'].iteritems():
+        # Ignore null or empty values (don't append to entity)
+        if not value:
+            continue
         attribute_value = get_related_field(instance, key)
         attribute_name = value['name']
         attribute_type = value['type']
