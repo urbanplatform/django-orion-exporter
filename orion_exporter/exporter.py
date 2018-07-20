@@ -68,6 +68,7 @@ def send_to_orion(instance):
         
         if not attribute_value and force_null:
             attribute_value = None
+            attribute_type = 'Text'
         else:
             if attribute_type == 'DateTime':
                 attribute_value = attribute_value.isoformat().replace('+00:00', 'Z')
