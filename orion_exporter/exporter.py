@@ -56,7 +56,9 @@ def send_to_orion(instance):
         # Ignore null or empty values (don't append to entity)
         
         attribute_value = get_related_field(instance, key)
-        if not attribute_value:
+        force_null = value.get('force_null', False)
+        
+        if not attribute_value and not force_null:
             continue
         
         attribute_name = value['name']
