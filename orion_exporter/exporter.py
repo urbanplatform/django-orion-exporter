@@ -12,6 +12,8 @@ BROKER_URL = getattr(settings, "BROKER_URL")
 app = Celery(broker=BROKER_URL)
 
 def get_related_field(instance, field):
+    if not field:
+        return None
     field_path = field.split('.')
     attr = instance
     for elem in field_path:
@@ -59,15 +61,18 @@ def send_to_orion(instance):
         force_null = value.get('force_null', False)
         
         if not attribute_value and not force_null:
-            continue
-        
+            continue    
+
         attribute_name = value['name']
         attribute_type = value['type']
         
-        if attribute_type == 'DateTime':
-            attribute_value = attribute_value.isoformat().replace('+00:00', 'Z')
-        elif attribute_type == 'geo:json':
-            attribute_value = json.loads(attribute_value.json)
+        if not attribute_value and force_null:
+            attribute_value = None
+        else:
+            if attribute_type == 'DateTime':
+                attribute_value = attribute_value.isoformat().replace('+00:00', 'Z')
+            elif attribute_type == 'geo:json':
+                attribute_value = json.loads(attribute_value.json)
 
         attribute = {
             attribute_name: {
