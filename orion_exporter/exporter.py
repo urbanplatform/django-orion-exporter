@@ -95,7 +95,8 @@ def send_to_orion(instance):
                 "fields": [
                     "start_date": {
                         "type": "DateTime",
-                        "name": "startDate"
+                        "name": "startDate",
+                        "force_null": True
                     },
                     "end_date": {
                         "type": "DateTime",
@@ -110,17 +111,22 @@ def send_to_orion(instance):
     related_querysets = fields.get('related_querysets', {})
     for field, attributes in static_attributes.iteritems():
         attribute_name = attributes['name']
-        fields = attributes['field']
+        fields = attributes['fields']
 
         queryset = getattr(instance, field).all().values(*attributes)
         for key, value in fields.iteritems():
             attribute_type = value['type']
             attribute_name = value['name']
+            force_null = value.get('force_null', False)
 
-            if attribute_type == 'DateTime':
-                value = value.isoformat().replace('+00:00', 'Z')
-            elif attribute_type == 'geo:json':
-                value = json.loads(attribute_value.json)
+            if not attribute_value and force_null:
+                attribute_value = None
+                attribute_type = 'Text'
+            else:
+                if attribute_type == 'DateTime':
+                    attribute_value = value.isoformat().replace('+00:00', 'Z')
+                elif attribute_type == 'geo:json':
+                    attribute_value = json.loads(attribute_value.json)
 
             attribute = {
                 attribute_name: {
