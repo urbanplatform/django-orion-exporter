@@ -93,49 +93,48 @@ def send_to_orion(instance):
             "source_times": {
                 "name": "sourceTimes",
                 "fields": [
-                    "start_date": {
-                        "type": "DateTime",
-                        "name": "startDate",
-                        "force_null": True
-                    },
-                    "end_date": {
-                        "type": "DateTime",
-                        "name": "endDate"
-                    }
+                    "start_date",
+                    "end_date"
                 ]
             }
         }
     }
+
+    {
+        "sourceTimes": [
+            {
+                "startDate": "2018-05-01T00:00:00Z",
+                "endDate": "2018-05-02T00:00:00Z"
+            },
+            {
+                "startDate": "2018-05-01T00:00:00Z",
+                "endDate": "2018-05-02T00:00:00Z"
+            }
+        ]
+    }
+
     '''
 
     related_querysets = fields.get('related_querysets', {})
-    for field, attributes in static_attributes.iteritems():
+
+    for field, attributes in related_querysets.iteritems():
         attribute_name = attributes['name']
         fields = attributes['fields']
 
-        queryset = getattr(instance, field).all().values(*attributes)
-        for key, value in fields.iteritems():
-            attribute_type = value['type']
-            attribute_name = value['name']
-            force_null = value.get('force_null', False)
+        original_values = getattr(instance, field).all().values(*fields)
+        clean_values = []
 
-            if not attribute_value and force_null:
-                attribute_value = None
-                attribute_type = 'Text'
-            else:
-                if attribute_type == 'DateTime':
-                    attribute_value = value.isoformat().replace('+00:00', 'Z')
-                elif attribute_type == 'geo:json':
-                    attribute_value = json.loads(attribute_value.json)
+        for entry in original_values:
+            clean_values.append({key: remove_bad_chars(value) for key, value in entry.iteritems()})
 
-            attribute = {
-                attribute_name: {
-                    "type": attribute_type,
-                    "value": remove_bad_chars(attribute_value)
-                }
+        attribute = {
+            attribute_name: {
+                "type": 'StructuredValue',
+                "value": clean_values
             }
-
-            entity.update(attribute)
+        }
+            
+        entity.update(attribute)
 
     body = {
         "actionType": "APPEND",
