@@ -92,10 +92,16 @@ def send_to_orion(instance):
         "related_querysets": {
             "source_times": {
                 "name": "sourceTimes",
-                "fields": [
-                    "start_date",
-                    "end_date"
-                ]
+                "fields": {
+                    "start_date": {
+                        "type": "DateTime",
+                        "name": "startDate"
+                    },
+                    "end_date": {
+                        "type": "DateTime",
+                        "name": "startDate"
+                    }
+                }
             }
         }
     }
@@ -121,20 +127,44 @@ def send_to_orion(instance):
         attribute_name = attributes['name']
         fields = attributes['fields']
 
-        original_values = getattr(instance, field).all().values(*fields)
+        '''
+        Get a list of dictionaries with  
+        '''
+        original_values = getattr(instance, field).all().values(*fields.keys())
         clean_values = []
 
         for entry in original_values:
-            clean_values.append({key: remove_bad_chars(value) for key, value in entry.iteritems()})
+            new_entry = {}
+                
+            for key, value in entry.iteritems():
+                force_null = fields[key].get('force_null', False)
+ 
+                if not value and not force_null:
+                    continue
+ 
+                entry_name = fields[key]['name']
+                entry_type = fields[key]['type']
 
-        attribute = {
-            attribute_name: {
-                "type": 'StructuredValue',
-                "value": clean_values
+                if not value and force_null:
+                    value = None
+                else:
+                    if entry_type == 'DateTime':
+                        value = value.isoformat().replace('+00:00', 'Z')
+                    elif entry_type == 'geo:json':
+                        value = json.loads(value.json)
+                
+                new_entry[entry_name] = remove_bad_chars(value)
+
+            clean_values.append(new_entry)
+        
+        entity.update(
+            {
+                attribute_name: {
+                    "type": 'StructuredValue',
+                    "value": clean_values
+                }
             }
-        }
-            
-        entity.update(attribute)
+        )
 
     body = {
         "actionType": "APPEND",
