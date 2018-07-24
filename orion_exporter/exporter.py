@@ -42,7 +42,7 @@ def remove_bad_chars(value):
     
     if isinstance(value, basestring):
         for bad_char in bad_chars:
-            value.replace(bad_char, '')
+            value = value.replace(bad_char, '')
         
     return value
 
