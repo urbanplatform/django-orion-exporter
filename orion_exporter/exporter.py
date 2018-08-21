@@ -30,12 +30,21 @@ def send_request(body, headers):
     print("BODY:\n")
     print(json.dumps(body))
 
-    #
-    # try:
-    #     orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
-    #     print(orion_request, orion_request.text)
-    # except:
-    #     logging.exception("Failed to send update to orion for entity {}".format(body))
+    simple_headers = {
+        "Content-Type": "application/json"
+    }
+
+    try:
+        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
+        print(orion_request, orion_request.text)
+    except:
+        logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
+
+    try:
+        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=simple_headers)
+        print(orion_request, orion_request.text)
+    except:
+        logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
 
 
 def remove_bad_chars(value):
