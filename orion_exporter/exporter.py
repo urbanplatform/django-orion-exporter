@@ -30,7 +30,7 @@ def send_request(body, headers):
     print("BODY:\n")
     print(json.dumps(body))
 
-    simple_headers = {
+    clean_headers = {
         "Content-Type": "application/json"
     }
 
@@ -41,7 +41,7 @@ def send_request(body, headers):
         logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
 
     try:
-        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=simple_headers)
+        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
         print(orion_request, orion_request.text)
     except:
         logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
@@ -100,7 +100,7 @@ def send_to_orion(instance):
 
     headers['Fiware-Service'] = fiware_service if fiware_service else None
     headers['Fiware-ServicePath'] = "{}{}".format(
-        "/{}".format(base_path) if base_path is not None else "", fiware_service_path
+        "/{}".format(base_path.replace(' ', '')) if base_path is not None else "", fiware_service_path
     )
 
     entity = {
