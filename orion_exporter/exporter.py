@@ -25,29 +25,74 @@ def get_related_field(instance, field):
 
 
 @app.task
-def send_request(body):
+def send_request(body, headers):
     print("Sending to Orion modified")
     print("BODY:\n")
     print(json.dumps(body))
 
-    try:
-        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers={"Content-Type": "application/json"})
-        print(orion_request)
-    except:
-        logging.exception("Failed to send update to orion for entity {}".format(body))
+    #
+    # try:
+    #     orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
+    #     print(orion_request, orion_request.text)
+    # except:
+    #     logging.exception("Failed to send update to orion for entity {}".format(body))
 
 
 def remove_bad_chars(value):
     bad_chars = ['<','>','"', '\'', '=', ';', '(', ')']
-    
+
     if isinstance(value, basestring):
         for bad_char in bad_chars:
-            value = value.replace(bad_char, '')
-        
+            value.replace(bad_char, '')
+
     return value
+
 
 def send_to_orion(instance):
     fields = instance.fiware_datamodel
+    headers = {"Content-Type": "application/json"}
+
+    '''
+    input:
+    { ...
+        "service": "Ubiwhere",
+        "service_path": {
+            "path": "/Parking/OffStreetParking",
+            "base_path": "parking_area.sources.location_name"
+        }
+    }
+
+    output:
+        {
+            "Fiware-Service": "Ubiwhere",
+            "Content-Type": "application/json",
+            "Fiware-ServicePath": "Koln/Parking/OffStreetParking" # base_path + path
+        }
+    '''
+    fiware_service = fields.get('service', {})
+    service_path_division = fields.get('service_path', {}).get('base_path', {})
+    service_path_division = service_path_division.split('.') if service_path_division is not None else None
+    fiware_service_path = fields.get('service_path', {}).get('path', {})
+
+    instance_aux = instance
+    base_path = None
+
+    if service_path_division:
+        for division in service_path_division:
+            if instance_aux.__class__.__name__ == 'ManyRelatedManager':
+                instance_aux = instance_aux.all().values()
+
+                for aux in instance_aux:
+                    base_path = aux.get(division, None)
+                break
+            else:
+                instance_aux = getattr(instance_aux, division)
+                base_path = instance_aux
+
+    headers['Fiware-Service'] = fiware_service if fiware_service else None
+    headers['Fiware-ServicePath'] = "{}{}".format(
+        "/{}".format(base_path) if base_path is not None else "", fiware_service_path
+    )
 
     entity = {
         "id": str(get_related_field(instance, fields['id'])),
@@ -56,16 +101,16 @@ def send_to_orion(instance):
 
     for key, value in fields['dynamic_attributes'].iteritems():
         # Ignore null or empty values (don't append to entity)
-        
+
         attribute_value = get_related_field(instance, key)
         force_null = value.get('force_null', False)
-        
+
         if not attribute_value and not force_null:
-            continue    
+            continue
 
         attribute_name = value['name']
         attribute_type = value['type']
-        
+
         if not attribute_value and force_null:
             attribute_value = None
             attribute_type = 'Text'
@@ -82,7 +127,7 @@ def send_to_orion(instance):
             }
         }
         entity.update(attribute)
-    
+
     static_attributes = fields.get('static_attributes', {})
     for key, value in static_attributes.iteritems():
         entity.update({key: value})
@@ -128,20 +173,20 @@ def send_to_orion(instance):
         fields = attributes['fields']
 
         '''
-        Get a list of dictionaries with  
+        Get a list of dictionaries with
         '''
         original_values = getattr(instance, field).all().values(*fields.keys())
         clean_values = []
 
         for entry in original_values:
             new_entry = {}
-                
+
             for key, value in entry.iteritems():
                 force_null = fields[key].get('force_null', False)
- 
+
                 if not value and not force_null:
                     continue
- 
+
                 entry_name = fields[key]['name']
                 entry_type = fields[key]['type']
 
@@ -152,11 +197,11 @@ def send_to_orion(instance):
                         value = value.isoformat().replace('+00:00', 'Z')
                     elif entry_type == 'geo:json':
                         value = json.loads(value.json)
-                
+
                 new_entry[entry_name] = remove_bad_chars(value)
 
             clean_values.append(new_entry)
-        
+
         entity.update(
             {
                 attribute_name: {
@@ -170,8 +215,9 @@ def send_to_orion(instance):
         "actionType": "APPEND",
         "entities": [entity]
     }
-    
+
     print("Sending to Orion")
     print(json.dumps(body))
-    
-    send_request.delay(body)
+    print(json.dumps(headers))
+
+    send_request.delay(body, headers)
