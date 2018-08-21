@@ -41,7 +41,7 @@ def send_request(body, headers):
         logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
 
     try:
-        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
+        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=clean_headers)
         print(orion_request, orion_request.text)
     except:
         logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
