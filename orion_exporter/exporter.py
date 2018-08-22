@@ -2,6 +2,9 @@ from __future__ import absolute_import
 
 import json
 
+import logging
+
+import requests
 from celery import Celery
 from django.conf import settings
 from django.db.models.query import QuerySet
@@ -35,18 +38,18 @@ def send_request(body, headers):
         "Content-Type": "application/json"
     }
 
-    # try:
-    #     orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
-    #     print(orion_request, orion_request.text)
-    # except:
-    #     logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
-    #
-    # try:
-    #     orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=clean_headers)
-    #     print(orion_request, orion_request.text)
-    # except:
-    #     logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
-    #
+    try:
+        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
+        print(orion_request, orion_request.text)
+    except:
+        logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
+
+    try:
+        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=clean_headers)
+        print(orion_request, orion_request.text)
+    except:
+        logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
+
 
 
 def remove_bad_chars(value):
@@ -113,7 +116,7 @@ def send_to_orion(instance):
 
     instance_aux = instance
 
-    base_path = get_path(instance_aux, service_path_division)
+    base_path = get_path(instance_aux, service_path_division) if service_path_division else None
 
     headers['Fiware-Service'] = fiware_service if fiware_service else None
     headers['Fiware-ServicePath'] = "{}{}".format(
@@ -122,7 +125,7 @@ def send_to_orion(instance):
 
     entity = {
         "id": str(get_related_field(instance, fields['id'])),
-        "type": fields['type'],
+        "type": "test",
     }
 
     for key, value in fields['dynamic_attributes'].iteritems():
