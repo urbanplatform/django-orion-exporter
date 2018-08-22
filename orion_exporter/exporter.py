@@ -125,7 +125,7 @@ def send_to_orion(instance):
 
     entity = {
         "id": str(get_related_field(instance, fields['id'])),
-        "type": "test",
+        "type": fields['type'],
     }
 
     for key, value in fields['dynamic_attributes'].iteritems():
