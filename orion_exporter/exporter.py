@@ -249,4 +249,4 @@ def send_to_orion(instance):
     print(json.dumps(body))
     print(json.dumps(headers))
 
-    send_request(body, headers)
+    send_request.delay(body, headers)
