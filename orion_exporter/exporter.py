@@ -1,15 +1,15 @@
 from __future__ import absolute_import
 
 import json
-import requests
 
-from django.conf import settings
-import logging
 from celery import Celery
+from django.conf import settings
+from django.db.models.query import QuerySet
 ORION_URL = getattr(settings, "ORION_URL", 'http://localhost:1026/')
 BROKER_URL = getattr(settings, "BROKER_URL")
 
 app = Celery(broker=BROKER_URL)
+
 
 def get_related_field(instance, field):
     if not field:
@@ -29,22 +29,24 @@ def send_request(body, headers):
     print("Sending to Orion modified")
     print("BODY:\n")
     print(json.dumps(body))
+    print(json.dumps(headers))
 
     clean_headers = {
         "Content-Type": "application/json"
     }
 
-    try:
-        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
-        print(orion_request, orion_request.text)
-    except:
-        logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
-
-    try:
-        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=clean_headers)
-        print(orion_request, orion_request.text)
-    except:
-        logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
+    # try:
+    #     orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
+    #     print(orion_request, orion_request.text)
+    # except:
+    #     logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
+    #
+    # try:
+    #     orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=clean_headers)
+    #     print(orion_request, orion_request.text)
+    # except:
+    #     logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
+    #
 
 
 def remove_bad_chars(value):
@@ -55,6 +57,32 @@ def remove_bad_chars(value):
             value.replace(bad_char, '')
 
     return value
+
+
+def get_path(instance_aux, service_path_division):
+    if not service_path_division:
+
+        return instance_aux
+
+    for division in service_path_division:
+
+        if instance_aux.__class__.__name__ == 'ManyRelatedManager':
+            instance_aux = instance_aux.all().values()
+            service_path_division.pop(0)
+
+            for aux in instance_aux:
+                return get_path(aux.get(division), service_path_division)
+
+        else:
+            if isinstance(instance_aux, QuerySet):
+                for aux in instance_aux:
+                    service_path_division.pop(0)
+                    return get_path(aux.get(division), service_path_division)
+
+            else:
+                instance_aux = getattr(instance_aux, division)
+                service_path_division.pop(0)
+                return get_path(instance_aux, service_path_division)
 
 
 def send_to_orion(instance):
@@ -84,19 +112,8 @@ def send_to_orion(instance):
     fiware_service_path = fields.get('service_path', {}).get('path', {})
 
     instance_aux = instance
-    base_path = None
 
-    if service_path_division:
-        for division in service_path_division:
-            if instance_aux.__class__.__name__ == 'ManyRelatedManager':
-                instance_aux = instance_aux.all().values()
-
-                for aux in instance_aux:
-                    base_path = aux.get(division, None)
-                break
-            else:
-                instance_aux = getattr(instance_aux, division)
-                base_path = instance_aux
+    base_path = get_path(instance_aux, service_path_division)
 
     headers['Fiware-Service'] = fiware_service if fiware_service else None
     headers['Fiware-ServicePath'] = "{}{}".format(
@@ -229,4 +246,4 @@ def send_to_orion(instance):
     print(json.dumps(body))
     print(json.dumps(headers))
 
-    send_request.delay(body, headers)
+    send_request(body, headers)
