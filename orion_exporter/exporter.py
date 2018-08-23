@@ -38,18 +38,18 @@ def send_request(body, headers):
         "Content-Type": "application/json"
     }
 
-    try:
-        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
-        print(orion_request, orion_request.text)
-    except:
-        logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
-
-    try:
-        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=clean_headers)
-        print(orion_request, orion_request.text)
-    except:
-        logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
-
+    # try:
+    #     orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
+    #     print(orion_request, orion_request.text)
+    # except:
+    #     logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
+    #
+    # try:
+    #     orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=clean_headers)
+    #     print(orion_request, orion_request.text)
+    # except:
+    #     logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
+    #
 
 
 def remove_bad_chars(value):
@@ -57,8 +57,7 @@ def remove_bad_chars(value):
 
     if isinstance(value, basestring):
         for bad_char in bad_chars:
-            value.replace(bad_char, '')
-
+            value = value.replace(bad_char, '')
     return value
 
 
