@@ -51,19 +51,19 @@ def send_request(body, headers):
     clean_headers = {
         "Content-Type": "application/json"
     }
-    save_entity_and_path(body.get('entities')[0].get('type'), headers.get('Fiware-ServicePath'))
-    # try:
-    #     orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
-    #     save_entity_and_path(body.get('entities')[0].get('type'), headers.get('Fiware-ServicePath'))
-    #     print(orion_request, orion_request.text)
-    # except:
-    #     logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
-    #
-    # try:
-    #     orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=clean_headers)
-    #     print(orion_request, orion_request.text)
-    # except:
-    #     logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
+
+    try:
+        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
+        save_entity_and_path(body.get('entities')[0].get('type'), headers.get('Fiware-ServicePath'))
+        print(orion_request, orion_request.text)
+    except:
+        logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
+
+    try:
+        orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=clean_headers)
+        print(orion_request, orion_request.text)
+    except:
+        logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
 
 
 def remove_bad_chars(value):
@@ -262,4 +262,4 @@ def send_to_orion(instance):
     print(json.dumps(body))
     print(json.dumps(headers))
 
-    send_request(body, headers)
+    send_request.delay(body, headers)
