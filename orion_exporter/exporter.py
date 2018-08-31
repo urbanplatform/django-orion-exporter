@@ -22,7 +22,7 @@ def save_entity_and_path(entity, path):
     )
 
     if orion_entity:
-        OrionServicePath.objects.create(
+        orion_service_path, created = OrionServicePath.objects.get_or_create(
             entity=orion_entity,
             name=path
         )
