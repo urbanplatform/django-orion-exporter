@@ -25,7 +25,7 @@ class OrionServicePath(models.Model):
         OrionEntity, null=False, blank=False, verbose_name='Entity', related_name='entity'
     )
     name = models.CharField(
-        'Entity Name', max_length=255, null=False, blank=False
+        'Service Path', max_length=255, null=False, blank=False
     )
     created_on = models.DateTimeField(
         auto_now_add=True, verbose_name='created on'
