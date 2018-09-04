@@ -21,10 +21,16 @@ def save_entity_and_path(entity, path):
         name=entity
     )
 
+    print ('Entity {} {}.\n'.format(entity, 'created' if created else 'not created'))
+
     if orion_entity:
         orion_service_path, created = OrionServicePath.objects.get_or_create(
             entity=orion_entity,
             name=path
+        )
+
+        print ('Service Path {} for Entity {} {}.\n'.format(
+            path, orion_entity, 'created' if created else 'not created')
         )
 
 
@@ -43,10 +49,8 @@ def get_related_field(instance, field):
 
 @app.task
 def send_request(body, headers):
-    print("Sending to Orion modified")
-    print("BODY:\n")
+    print("Sending to Orion")
     print(json.dumps(body))
-    print(json.dumps(headers))
 
     clean_headers = {
         "Content-Type": "application/json"
@@ -54,10 +58,11 @@ def send_request(body, headers):
 
     try:
         orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
-        save_entity_and_path(body.get('entities')[0].get('type'), headers.get('Fiware-ServicePath'))
         print(orion_request, orion_request.text)
     except:
         logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
+
+    save_entity_and_path(body.get('entities')[0].get('type'), headers.get('Fiware-ServicePath'))
 
     try:
         orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=clean_headers)
@@ -257,9 +262,5 @@ def send_to_orion(instance):
         "actionType": "APPEND",
         "entities": [entity]
     }
-
-    print("Sending to Orion")
-    print(json.dumps(body))
-    print(json.dumps(headers))
 
     send_request.delay(body, headers)
