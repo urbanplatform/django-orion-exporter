@@ -21,7 +21,7 @@ def save_entity_and_path(entity, path):
         name=entity
     )
 
-    print ('Entity {} {}.\n'.format(entity, 'created' if created else 'not created'))
+    print ('Entity *{}* *{}*.\n'.format(entity, 'created' if created else 'not created'))
 
     if orion_entity:
         orion_service_path, created = OrionServicePath.objects.get_or_create(
@@ -29,8 +29,8 @@ def save_entity_and_path(entity, path):
             name=path
         )
 
-        print ('Service Path {} for Entity {} {}.\n'.format(
-            path, orion_entity, 'created' if created else 'not created')
+        print ('Service Path *{}* for Entity *{}* *{}*.\n'.format(
+            path, entity, 'created' if created else 'not created')
         )
 
 
@@ -82,7 +82,6 @@ def remove_bad_chars(value):
 
 def get_path(instance_aux, service_path_division):
     if not service_path_division:
-
         return instance_aux
 
     for division in service_path_division:
@@ -132,11 +131,10 @@ def send_to_orion(instance):
     service_path_division = service_path_division.split('.') if service_path_division is not None else None
     fiware_service_path = fields.get('service_path', {}).get('path', {})
 
-    instance_aux = instance
-
-    base_path = get_path(instance_aux, service_path_division) if service_path_division else None
+    base_path = get_path(instance, service_path_division) if service_path_division else None
 
     headers['Fiware-Service'] = fiware_service if fiware_service else None
+
     headers['Fiware-ServicePath'] = "{}{}".format(
         "/{}".format(base_path.replace(' ', '')) if base_path is not None else "", fiware_service_path
     )
