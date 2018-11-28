@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import json
 import logging
@@ -21,7 +21,7 @@ def save_entity_and_path(entity, path):
         name=entity
     )
 
-    print ('Entity *{}* *{}*.\n'.format(entity, 'created' if created else 'not created'))
+    print(('Entity *{}* *{}*.\n'.format(entity, 'created' if created else 'not created')))
 
     if orion_entity:
         orion_service_path, created = OrionServicePath.objects.get_or_create(
@@ -29,9 +29,9 @@ def save_entity_and_path(entity, path):
             name=path
         )
 
-        print ('Service Path *{}* for Entity *{}* *{}*.\n'.format(
+        print(('Service Path *{}* for Entity *{}* *{}*.\n'.format(
             path, entity, 'created' if created else 'not created')
-        )
+        ))
 
 
 def get_related_field(instance, field):
@@ -50,7 +50,7 @@ def get_related_field(instance, field):
 @app.task
 def send_request(body, headers):
     print("Sending to Orion")
-    print(json.dumps(body))
+    print((json.dumps(body)))
 
     clean_headers = {
         "Content-Type": "application/json"
@@ -58,7 +58,7 @@ def send_request(body, headers):
 
     try:
         orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=headers)
-        print(orion_request, orion_request.text)
+        print((orion_request, orion_request.text))
     except:
         logging.exception("Failed to send update to orion for entity {} with Fiware Headers".format(body))
 
@@ -66,7 +66,7 @@ def send_request(body, headers):
 
     try:
         orion_request = requests.post("{}v2/op/update".format(ORION_URL), data=json.dumps(body), headers=clean_headers)
-        print(orion_request, orion_request.text)
+        print((orion_request, orion_request.text))
     except:
         logging.exception("Failed to send update to orion for entity {} without Fiware Headers".format(body))
 
@@ -74,7 +74,7 @@ def send_request(body, headers):
 def remove_bad_chars(value):
     bad_chars = ['<','>','"', '\'', '=', ';', '(', ')']
 
-    if isinstance(value, basestring):
+    if isinstance(value, str):
         for bad_char in bad_chars:
             value = value.replace(bad_char, '')
     return value
@@ -87,7 +87,7 @@ def get_path(instance_aux, service_path_division):
     for division in service_path_division:
 
         if instance_aux.__class__.__name__ == 'ManyRelatedManager':
-            instance_aux = instance_aux.all().values()
+            instance_aux = list(instance_aux.all().values())
             service_path_division.pop(0)
 
             for aux in instance_aux:
@@ -144,7 +144,7 @@ def send_to_orion(instance):
         "type": fields['type'],
     }
 
-    for key, value in fields['dynamic_attributes'].iteritems():
+    for key, value in fields['dynamic_attributes'].items():
         # Ignore null or empty values (don't append to entity)
 
         attribute_value = get_related_field(instance, key)
@@ -174,7 +174,7 @@ def send_to_orion(instance):
         entity.update(attribute)
 
     static_attributes = fields.get('static_attributes', {})
-    for key, value in static_attributes.iteritems():
+    for key, value in static_attributes.items():
         entity.update({key: value})
 
     '''
@@ -213,20 +213,20 @@ def send_to_orion(instance):
 
     related_querysets = fields.get('related_querysets', {})
 
-    for field, attributes in related_querysets.iteritems():
+    for field, attributes in related_querysets.items():
         attribute_name = attributes['name']
         fields = attributes['fields']
 
         '''
         Get a list of dictionaries with
         '''
-        original_values = getattr(instance, field).all().values(*fields.keys())
+        original_values = getattr(instance, field).all().values(*list(fields.keys()))
         clean_values = []
 
         for entry in original_values:
             new_entry = {}
 
-            for key, value in entry.iteritems():
+            for key, value in entry.items():
                 force_null = fields[key].get('force_null', False)
 
                 if not value and not force_null:
