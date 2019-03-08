@@ -1,5 +1,4 @@
 
-
 import json
 import logging
 
@@ -127,8 +126,10 @@ def send_to_orion(instance):
         }
     '''
     fiware_service = fields.get('service', {})
+    print ("Fiware-service:", fiware_service)
     service_path_division = fields.get('service_path', {}).get('base_path', {})
-    service_path_division = service_path_division.split('.') if service_path_division is not None else None
+    print ("Service_path_division: ", service_path_division)
+    service_path_division = service_path_division.split('.') if service_path_division is not {}} else None
     fiware_service_path = fields.get('service_path', {}).get('path', {})
 
     base_path = get_path(instance, service_path_division) if service_path_division else None
