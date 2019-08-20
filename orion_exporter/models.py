@@ -22,7 +22,7 @@ class OrionEntity(models.Model):
 
 class OrionServicePath(models.Model):
     entity = models.ForeignKey(
-        OrionEntity, null=False, blank=False, verbose_name='Entity', related_name='entity'
+        OrionEntity, null=False, blank=False, verbose_name='Entity', related_name='entity', on_delete=models.CASCADE
     )
     name = models.CharField(
         'Service Path', max_length=255, null=False, blank=False
