@@ -14,7 +14,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        'Django==1.11.16',
+        'Django>=2.2',
     ],    
     zip_safe=False,
     license='MIT',
