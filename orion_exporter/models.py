@@ -23,7 +23,15 @@ class OrionEntity(models.Model):
         abstract = True
 
     @staticmethod
-    def orion_translation(orion_type, fields, object_id):
+    def sanitize_value(value):
+        """
+        Sanitizes values
+        @param value:
+        @return:
+        """
+        return "" if not value else value
+
+    def orion_translation(self, orion_type, fields, object_id):
         """
         Translates the object to be sent to Orion
 
@@ -57,7 +65,7 @@ class OrionEntity(models.Model):
                 value = fields[field]
 
             message[field] = {
-                "value": value,
+                "value": self.sanitize_value(value),
                 "type": translation_type
             }
         return message
