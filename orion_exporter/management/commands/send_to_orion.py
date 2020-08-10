@@ -26,13 +26,12 @@ class Command(BaseCommand):
             if model._meta.abstract:  # If model is abstract
                 self.parse_models(model.__subclasses__())
             else:  # If model is not abstract
-                objects = model.objects.filter(sent_to_orion=True)
+                objects = model.objects.filter(sent_to_orion=False)
                 for obj in objects:
                     tasks.append(gevent.spawn(self.send_request, obj))
 
         gevent.wait(tasks)
 
     def handle(self, *args, **options):
-        print("ENTRA")
         # Get inherited model from Orion exporter model and get their objects
         self.parse_models(OrionEntity.__subclasses__())

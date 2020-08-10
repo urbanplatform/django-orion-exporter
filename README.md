@@ -1,63 +1,64 @@
-# Citibrain Points of Interest Django App - POIs App
+# Orion Exporter
 
-This Django App provides RESTfull and AMQP interfaces for Traffic events.
-
-## Requirements
-
-#### Citibrain Assets App v5.0.0
-* Available at `git+ssh://git@gitlab.ubiwhere.com:2223/citibrain-iot-platform/citibrain-assets.git@5.0.0`
-    
-#### Citibrain Skeleton App v4.0.0
-* Available at `git+ssh://git@gitlab.ubiwhere.com:2223/citibrain-iot-platform/citibrain-app-skeleton.git@4.0.0`
-
-#### RabbitMQ
-TODO
+This app is responsible to send every X minutes the configures data to Orion
+Context Broker.
 
 ## Installation
-
-* Add `git+ssh://git@gitlab.ubiwhere.com:2223/mbaas/apps/traffic_events` to your project requirements
+To install you must add the package `` to your requirements. 
 
 ## Configuration
 
-#### Project
+To set the data that you want to send to OCB you must configure the
+correspondent data model. The model must inherit the `OrionEntity` model from
+this package and the you must set the following property for the model:
 
-* Add the `traffic_events` to your Django Project Installed Apps:
+### Inheritance
 
+```python
+from orion_exporter.models import OrionEntity
+
+class Reading(OrionEntity):
+    timestamp = models.DateTimeField()
 ```
-INSTALLED_APPS = [
-    ...,
-    'traffic_events',
-]
+
+### Property
+```python
+    @property
+    def orion_properties(self):
+        """Returns orion translation fields"""
+        fields = {
+            "<field_name>": self.<field_name>
+        }
+        _type = "<fiware_data_model_type>"
+
+        return _type, fields
 ```
 
-* Run `python manage.py migrate`
+Example:
 
-* Include the URL conf in your project urls.py like this:
+```python
+    @property
+    def orion_properties(self):
+        """Returns orion translation fields and type"""
+        fields = {
+            "pm10": self.pm10
+        }
+        _type = "AirQualityObserved"
 
- `from traffic_events.api.urls import traffic_router`
+        return _type, fields
+```
 
- `url(r'^api/traffic/', include(traffic_router.urls, namespace='traffic')),`
+From this point you are ready to send data to OCB. Before you just need to
+set in your project settings the task to do it:
 
-
-#### Environment Variables
-
-There are some environment variables that must be include, otherwise they will be assumed with default values:
-
-`CONSUMER_QUEUE`: RabbitMQ queue that will be used for the AMQP connection. The default value is `pois_queue`
-`CONSUMER_EXCHANGE`: RabbitMQ queue that will be used for the AMQP connection. The default value is `pois_exchange`
-
-`AMQP_USER`: RabbitMQ User that will be used for the AMQP connection. The default value is `guest`
-`AMQP_PASS`: RabbitMQ Password that will be used for the AMQP connection. The default value is `guest`
-`AMQP_HOST`: RabbitMQ Host for the AMQP connection. The default value is `gurabbitmq`
-`AMQP_PORT`: RabbitMQ Port AMQP connection. The default value is `5672`
-
-
-## Examples
-
-#### HTTP
-
-* Go to `http://localhost:8000/api/traffic/traffic_events` to list all the available traffic events
-
-#### AMQP
-
-TODO
+```python
+# Celery settings for tasks scheduling
+CELERY_BEAT_SCHEDULE = {
+    'export_to_orion': {
+        'task': 'orion_exporter.tasks.send_to_orion',
+        'schedule': timedelta(seconds=10),
+        # 'schedule': crontab(minute='0', hour='0'),
+        'options': {'queue': 'orion_exporter'}
+    }
+}
+```
