@@ -8,7 +8,8 @@ ORION_FIELDS_TYPES = {
     str: 'String',
     datetime.datetime: 'DateTime',
     bool: 'Boolean',
-    dict: 'String',
+    dict: 'Property',
+    list: 'Property',
     Point: 'Point',
     Polygon: 'Polygon',
     LineString: 'LineString'

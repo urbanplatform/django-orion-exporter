@@ -31,43 +31,49 @@ class OrionEntity(models.Model):
         """
         return "" if not value else value
 
-    def orion_translation(self, orion_type, fields, object_id):
+    def orion_translation(self, orion_type, fields):
         """
         Translates the object to be sent to Orion
 
         @param orion_type: Indicates the orion message type (ex.:
         AirQualityObserved)
         @param fields: All the fields that are to send to orion
-        @param object_id: Object ID that will be sent to Orion
         @return: Dictionary that will be sent to orion
         """
         message = {
             "type": orion_type,
-            "id": str(object_id)
+            "id": str(fields.get('id'))
         }
+        del fields['id']
 
-        for field in fields:
+        for key, val in fields.items():
             for orion_type in ORION_FIELDS_TYPES:
-                if isinstance(field, orion_type):
+                if isinstance(val, orion_type):
                     translation_type = ORION_FIELDS_TYPES[orion_type]
                     break
+
             if translation_type == "DateTime":
-                value = fields[field].strftime("%Y-%m-%dT%H:%M:%SZ")
+                value = val.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-            elif isinstance(fields[field], (Point, Polygon, LineString)):
-                value = json.loads(fields[field].geojson)
-                value = value.coordiantes
+            elif isinstance(val, (Point, Polygon, LineString)):
+                value = json.loads(val.geojson)
+                value = {
+                    "type": translation_type,
+                    "coordinates": value.get('coordinates')
+                }
+                translation_type = "geo:json"
 
-            elif isinstance(fields[field], dict):
-                value = json.dumps(fields[field])
+            elif isinstance(val, dict):
+                value = val
 
             else:
-                value = fields[field]
+                value = val
 
-            message[field] = {
+            message[key] = {
                 "value": self.sanitize_value(value),
                 "type": translation_type
             }
+
         return message
 
     def send_to_orion(self, obj):
@@ -85,9 +91,9 @@ class OrionEntity(models.Model):
         }
         orion_type, fields = obj.orion_properties
         message = self.orion_translation(
-            orion_type, fields, obj.id
+            orion_type, fields
         )
-
+        
         data = {
             "actionType": "APPEND",
             "entities": [message]
@@ -97,6 +103,7 @@ class OrionEntity(models.Model):
             data=json.dumps(data),
             headers=headers
         )
+
         if response.status_code == status.HTTP_204_NO_CONTENT:
             self.sent_to_orion = True
             self.last_orion_update = timezone.now()
@@ -104,5 +111,8 @@ class OrionEntity(models.Model):
         else:
             log.error(
                 "Impossible to send data to Orion Context Broker. Status "
-                "Code: {}".format(response.status_code)
+                "Code: {}. Message: {}".format(
+                    response.status_code,
+                    response.text
+                )
             )
