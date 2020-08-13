@@ -83,36 +83,39 @@ class OrionEntity(models.Model):
         @param obj: Object to be parsed and sent to Orion
         """
 
-        orion_base_url = getattr(
-            settings, 'ORION_URL', 'http://orion:1026'
-        )
-        headers = {
-            'Content-Type': 'application/json'
-        }
         orion_type, fields = obj.orion_properties
-        message = self.orion_translation(
-            orion_type, fields
-        )
-        
-        data = {
-            "actionType": "APPEND",
-            "entities": [message]
-        }
-        response = requests.post(
-            '{}/v2/op/update'.format(orion_base_url),
-            data=json.dumps(data),
-            headers=headers
-        )
 
-        if response.status_code == status.HTTP_204_NO_CONTENT:
-            self.sent_to_orion = True
-            self.last_orion_update = timezone.now()
-            self.save()
-        else:
-            log.error(
-                "Impossible to send data to Orion Context Broker. Status "
-                "Code: {}. Message: {}".format(
-                    response.status_code,
-                    response.text
-                )
+        if orion_type and fields:
+            orion_base_url = getattr(
+                settings, 'ORION_URL', 'http://orion:1026'
             )
+            headers = {
+                'Content-Type': 'application/json'
+            }
+
+            message = self.orion_translation(
+                orion_type, fields
+            )
+            
+            data = {
+                "actionType": "APPEND",
+                "entities": [message]
+            }
+            response = requests.post(
+                '{}/v2/op/update'.format(orion_base_url),
+                data=json.dumps(data),
+                headers=headers
+            )
+
+            if response.status_code == status.HTTP_204_NO_CONTENT:
+                self.sent_to_orion = True
+                self.last_orion_update = timezone.now()
+                self.save()
+            else:
+                log.error(
+                    "Impossible to send data to Orion Context Broker. Status "
+                    "Code: {}. Message: {}".format(
+                        response.status_code,
+                        response.text
+                    )
+                )
