@@ -82,10 +82,10 @@ class OrionEntity(models.Model):
 
         @param obj: Object to be parsed and sent to Orion
         """
-
         orion_type, fields = obj.orion_properties
 
         if orion_type and fields:
+
             orion_base_url = getattr(
                 settings, 'ORION_URL', 'http://orion:1026'
             )
@@ -96,7 +96,7 @@ class OrionEntity(models.Model):
             message = self.orion_translation(
                 orion_type, fields
             )
-            
+
             data = {
                 "actionType": "APPEND",
                 "entities": [message]

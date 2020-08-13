@@ -12,5 +12,6 @@ ORION_FIELDS_TYPES = {
     list: 'Property',
     Point: 'Point',
     Polygon: 'Polygon',
-    LineString: 'LineString'
+    LineString: 'LineString',
+    type(None): 'String'
 }
