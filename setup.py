@@ -15,7 +15,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'Django>=2.2',
-        'gevent==20.6.2'
+        'gevent==20.9.0'
     ],    
     zip_safe=False,
     license='MIT',
