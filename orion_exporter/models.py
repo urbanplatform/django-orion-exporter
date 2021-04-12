@@ -31,17 +31,13 @@ class OrionEntity(models.Model):
         """
         return "" if not value else value
 
-    def orion_translation(self, orion_type, fields):
+    def orion_translation(self, info):
         """
         Translates the object to be sent to Orion
-
-        @param orion_type: Indicates the orion message type (ex.:
-        AirQualityObserved)
-        @param fields: All the fields that are to send to orion
-        @return: Dictionary that will be sent to orion
         """
+        fields = info.get('fields')
         message = {
-            "type": orion_type,
+            "type": info.get('orion_type'),
             "id": str(fields.get('id'))
         }
         del fields['id']
@@ -82,10 +78,9 @@ class OrionEntity(models.Model):
 
         @param obj: Object to be parsed and sent to Orion
         """
-        orion_type, fields = obj.orion_properties
+        info = obj.orion_properties
 
-        if orion_type and fields:
-
+        if info:
             orion_base_url = getattr(
                 settings, 'ORION_URL', 'http://orion:1026'
             )
@@ -93,29 +88,29 @@ class OrionEntity(models.Model):
                 'Content-Type': 'application/json'
             }
 
-            message = self.orion_translation(
-                orion_type, fields
-            )
-
-            data = {
-                "actionType": "APPEND",
-                "entities": [message]
-            }
-            response = requests.post(
-                '{}/v2/op/update'.format(orion_base_url),
-                data=json.dumps(data),
-                headers=headers
-            )
-
-            if response.status_code == status.HTTP_204_NO_CONTENT:
-                self.sent_to_orion = True
-                self.last_orion_update = timezone.now()
-                self.save()
-            else:
-                log.error(
-                    "Impossible to send data to Orion Context Broker. Status "
-                    "Code: {}. Message: {}".format(
-                        response.status_code,
-                        response.text
-                    )
+            for info in info:
+                message = self.orion_translation(
+                    info
                 )
+
+                data = {
+                    "actionType": "APPEND",
+                    "entities": [message]
+                }
+                response = requests.post(
+                    '{}/v2/op/update'.format(orion_base_url),
+                    data=json.dumps(data),
+                    headers=headers
+                )
+                if response.status_code == status.HTTP_204_NO_CONTENT:
+                    self.sent_to_orion = True
+                    self.last_orion_update = timezone.now()
+                    self.save()
+                else:
+                    log.error(
+                        "Impossible to send data to Orion Context Broker. Status "
+                        "Code: {}. Message: {}".format(
+                            response.status_code,
+                            response.text
+                        )
+                    )
